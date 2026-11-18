@@ -1,0 +1,33 @@
+
+name: Hostinger SSH Connection Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  connect-server:
+    name: Connect to Hostinger
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect to Hostinger Server
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+
+          script: |
+            echo "SSH Connection Successful!"
+            echo "Current User:"
+            whoami
+
+            echo "Current Directory:"
+            pwd
+
+            echo "PHP Version:"
+            php -v
+
+            echo "Git Version:"
+            git --version
