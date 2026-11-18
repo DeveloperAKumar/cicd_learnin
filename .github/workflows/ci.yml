@@ -1,32 +1,82 @@
 
-name: My First CI Pipeline
+name: Complete CI CD Pipeline
 
 on:
   push:
     branches:
       - main
 
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  first-job:
-    name: CI Learning Job
+
+  # JOB 1: CONTINUOUS INTEGRATION
+  test:
+    name: Test Website Files
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Check Repository
-        run: echo "Code successfully fetched!"
+      - name: Check HTML File
+        run: |
+          test -f index.html
+          echo "HTML file exists!"
 
-      - name: Show Current Directory
-        run: pwd
+      - name: Check CSS File
+        run: |
+          test -f style.css
+          echo "CSS file exists!"
 
-      - name: List Files
-        run: ls -la
+      - name: Validate HTML Structure
+        run: |
+          grep -qi '<!DOCTYPE html>' index.html
+          grep -qi '<html' index.html
+          grep -qi '</html>' index.html
+          echo "HTML structure check passed!"
 
-      - name: Success Message
-        run: echo "My First CI Pipeline Completed!"
+      - name: CI Completed
+        run: echo "All tests passed successfully!"
+
+  # JOB 2: CONTINUOUS DEPLOYMENT
+  deploy:
+    name: Deploy to Hostinger
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Upload Website Files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+
+          source: "index.html,style.css"
+          target: "/home/u338223569/domains/cicd.southdelhihub.com/public_html/"
+          overwrite: true
+
+      - name: Verify Deployment
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USERNAME }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+
+          script: |
+            cd /home/u338223569/domains/cicd.southdelhihub.com/public_html
+
+            test -f index.html
+            test -f style.css
+
+            echo "Deployment verified successfully!"
